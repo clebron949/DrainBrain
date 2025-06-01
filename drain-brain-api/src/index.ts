@@ -27,6 +27,11 @@ app.get("/", (c) => {
   return c.json({ greeting: "Hello Hono!" });
 });
 
+app.post("/oilchangehistory", async (ctx) => {
+  const body = await ctx.req.json();
+  console.log("Received oil change history:", body);
+});
+
 app.get("/oilchangehistory", async (ctx) => {
   console.log("Fetching oil change history...");
   try {
@@ -41,10 +46,28 @@ app.get("/oilchangehistory", async (ctx) => {
   }
 });
 
+app.get("/oilchangehistory/changeddate/:changedDate", async (ctx) => {
+  const { changedDate } = ctx.req.param();
+  try {
+    await connect(connectionString);
+    const result = await oilChangeHistoryModel
+      .findOne({
+        changedDate: changedDate,
+      })
+      .exec();
+    await disconnect();
+    return ctx.json(result);
+  } catch (error) {
+    const err = error as Error;
+    console.error("Error fetching oil change history:", error);
+    return ctx.json({ message: err.message, status: 500 });
+  }
+});
+
 serve(
   {
     fetch: app.fetch,
-    port: 3000,
+    port: 3001,
   },
   (info) => {
     console.log(`Server is running on http://localhost:${info.port}`);
